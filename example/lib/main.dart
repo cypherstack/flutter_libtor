@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_libtor/flutter_libtor.dart';
 // imports needed for tor usage:
 import 'package:flutter_libtor/models/tor_config.dart';
+import 'package:flutter_libtor_example/socks_socket.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:socks5_proxy/socks_client.dart'; // just for example; can use any socks5 proxy package, pick your favorite.
 
@@ -178,7 +179,22 @@ class _MyAppState extends State<MyApp> {
                 spacerSmall,
                 TextButton(
                     onPressed: () async {
-                      // TODO check that tor is running
+                      // TODO check that tor is running'
+                      SOCKSSocket socksSocket = SOCKSSocket(
+                          host: InternetAddress.loopbackIPv4.address,
+                          port: tor.port);
+                      try {
+                        await socksSocket.connect();
+                      } catch (e) {
+                        print(e);
+                      }
+                      try {
+                        await socksSocket.connectTo(
+                            'bitcoincash.stackwallet.com', 50001);
+                      } catch (e) {
+                        print(e);
+                      }
+                      // TODO request server features
                     },
                     child: const Text(
                         "connect to bitcoincash.stackwallet.com:50002")),

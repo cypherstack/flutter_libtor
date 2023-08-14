@@ -185,12 +185,15 @@ class _MyAppState extends State<MyApp> {
                           port: tor.port);
                       try {
                         await socksSocket.connect();
+                        print('should be connected to tor socks proxy');
                       } catch (e) {
                         print(e);
                       }
                       try {
                         await socksSocket.connectTo(
                             'bitcoincash.stackwallet.com', 50001);
+                        print(
+                            'should be connected to bitcoincash.stackwallet.com:50001 via tor socks socket');
                       } catch (e) {
                         print(e);
                       }

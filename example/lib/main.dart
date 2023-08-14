@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_libtor/flutter_libtor.dart';
 // imports needed for tor usage:
 import 'package:flutter_libtor/models/tor_config.dart';
-import 'package:flutter_libtor_example/socks_socket.dart';
+import 'package:flutter_libtor_example/socks5.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:socks5_proxy/socks_client.dart'; // just for example; can use any socks5 proxy package, pick your favorite.
 
@@ -47,6 +47,8 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> init() async {
     final Directory appDocDir = await getApplicationDocumentsDirectory();
+    print('starting tor at');
+    print(appDocDir.path);
     // int newControlPort = await tor.getRandomUnusedPort(
     //     excluded: [/*int.parse(portController.text)*/]);
     // TorConfig torConfig = new TorConfig(
@@ -179,21 +181,25 @@ class _MyAppState extends State<MyApp> {
                 spacerSmall,
                 TextButton(
                     onPressed: () async {
-                      // TODO check that tor is running'
-                      SOCKSSocket socksSocket = SOCKSSocket(
-                          host: InternetAddress.loopbackIPv4.address,
-                          port: tor.port);
+                      // TODO check that tor is running
                       try {
-                        await socksSocket.connect();
+                        final sock = await RawSocket.connect(
+                            InternetAddress.loopbackIPv4, tor.port);
+                        final proxy = SOCKSSocket(sock);
+                        await proxy
+                            .connect('bitcoincash.stackwallet.com:50001');
+                        proxy.subscription.onData((RawSocketEvent event) {
+                          /// [RawSocketEvent] messages are here
+                          /// read from here..
+                          if (event == RawSocketEvent.read) {
+                            final data = sock.read(sock.available());
+                            print('proxy.subscription.onData: $data');
+                          }
+                        });
                       } catch (e) {
                         print(e);
                       }
-                      try {
-                        await socksSocket.connectTo(
-                            'bitcoincash.stackwallet.com', 50001);
-                      } catch (e) {
-                        print(e);
-                      }
+
                       // TODO request server features
                     },
                     child: const Text(

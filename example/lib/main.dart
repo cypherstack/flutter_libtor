@@ -11,11 +11,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:socks5_proxy/socks_client.dart'; // just for example; can use any socks5 proxy package, pick your favorite.
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  MyApp({super.key});
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -63,7 +63,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    const textStyle = TextStyle(fontSize: 25);
+    // const textStyle = TextStyle(fontSize: 25);
     const spacerSmall = SizedBox(height: 10);
     return MaterialApp(
       home: Scaffold(
@@ -173,15 +173,15 @@ class _MyAppState extends State<MyApp> {
                         // Close client
                         client.close();
                       },
-                      child: Text("make proxied request")),
+                      child: const Text("make proxied request")),
                 ]),
                 spacerSmall,
                 TextButton(
                     onPressed: () async {
                       // TODO check that tor is running
                     },
-                    child:
-                        Text("connect to bitcoincash.stackwallet.com:50002")),
+                    child: const Text(
+                        "connect to bitcoincash.stackwallet.com:50002")),
                 // ),
               ],
             ),

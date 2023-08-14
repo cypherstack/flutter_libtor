@@ -1,4 +1,5 @@
 // example app deps, not necessarily needed for tor usage
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,39 +11,54 @@ import 'package:path_provider/path_provider.dart';
 import 'package:socks5_proxy/socks_client.dart'; // just for example; can use any socks5 proxy package, pick your favorite.
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
-  late int sumResult;
-  late Future<int> sumAsyncResult;
-
   final tor = Tor();
-  final portController = TextEditingController();
-  final passwordController = TextEditingController();
+  late TorConfig _torConfig;
+  late String? _password;
+  // final portController = TextEditingController();
+  // final passwordController = TextEditingController();
   final hostController = TextEditingController(text: 'https://icanhazip.com/');
 
   @override
   void initState() {
-    this.getPort();
-    this.getPassword();
+    unawaited(init());
     super.initState();
   }
 
   @override
   void dispose() {
     // Clean up the controller when the widget is disposed.
-    portController.dispose();
-    passwordController.dispose();
+    // portController.dispose();
+    // passwordController.dispose();
     hostController.dispose();
     super.dispose();
+  }
+
+  Future<void> init() async {
+    final Directory appDocDir = await getApplicationDocumentsDirectory();
+    // int newControlPort = await tor.getRandomUnusedPort(
+    //     excluded: [/*int.parse(portController.text)*/]);
+    // TorConfig torConfig = new TorConfig(
+    //     dataDirectory: appDocDir.path + '/tor',
+    //     logFile: appDocDir.path + '/tor/tor.log',
+    //     socksPort: int.parse(portController.text),
+    //     controlPort: newControlPort,
+    //     password: passwordController.text);
+
+    // Start the Tor daemon
+    _torConfig = await tor.start(torDir: Directory('${appDocDir.path}/tor'));
+    _password = _torConfig.password;
+    print('done awaiting; tor should be running');
   }
 
   @override
@@ -100,28 +116,28 @@ class _MyAppState extends State<MyApp> {
                 //       ),
                 //     ]),
                 //     spacerSmall,
-                TextButton(
-                    onPressed: () async {
-                      final Directory appDocDir =
-                          await getApplicationDocumentsDirectory();
-                      int newControlPort = await this.tor.getRandomUnusedPort(
-                          excluded: [int.parse(portController.text)]);
-
-                      TorConfig torConfig = new TorConfig(
-                          dataDirectory: appDocDir.path + '/tor',
-                          logFile: appDocDir.path + '/tor/tor.log',
-                          socksPort: int.parse(portController.text),
-                          controlPort: newControlPort,
-                          password: passwordController.text);
-
-                      // Start the Tor daemon
-                      await this
-                          .tor
-                          .start(torDir: Directory(appDocDir.path + '/tor'));
-                      print('done awaiting');
-                    },
-                    child: Text("start tor")),
-                spacerSmall,
+                // TextButton(
+                //     onPressed: () async {
+                //       final Directory appDocDir =
+                //           await getApplicationDocumentsDirectory();
+                //       int newControlPort = await this.tor.getRandomUnusedPort(
+                //           excluded: [int.parse(portController.text)]);
+                //
+                //       TorConfig torConfig = new TorConfig(
+                //           dataDirectory: appDocDir.path + '/tor',
+                //           logFile: appDocDir.path + '/tor/tor.log',
+                //           socksPort: int.parse(portController.text),
+                //           controlPort: newControlPort,
+                //           password: passwordController.text);
+                //
+                //       // Start the Tor daemon
+                //       await this
+                //           .tor
+                //           .start(torDir: Directory(appDocDir.path + '/tor'));
+                //       print('done awaiting');
+                //     },
+                //     child: Text("start tor")),
+                // spacerSmall,
                 Row(children: [
                   Expanded(
                     child: TextField(
@@ -140,10 +156,9 @@ class _MyAppState extends State<MyApp> {
 
                         // Assign connection factory
                         SocksTCPClient.assignToHttpClient(client, [
-                          ProxySettings(
-                              InternetAddress.loopbackIPv4, this.tor.port,
-                              password: passwordController
-                                  .text), // need to get from tor config file
+                          ProxySettings(InternetAddress.loopbackIPv4, tor.port,
+                              password:
+                                  _password), // need to get from tor config file
                         ]);
 
                         // GET request
@@ -176,11 +191,11 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  getPort() async {
-    portController.text = "${await this.tor.getRandomUnusedPort()}";
-  }
-
-  getPassword() async {
-    passwordController.text = "${await this.tor.generatePassword()}";
-  }
+  // getPort() async {
+  //   portController.text = "${await this.tor.getRandomUnusedPort()}";
+  // }
+  //
+  // getPassword() async {
+  //   passwordController.text = "${await this.tor.generatePassword()}";
+  // }
 }

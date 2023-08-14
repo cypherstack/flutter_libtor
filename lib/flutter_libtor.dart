@@ -75,7 +75,7 @@ class Tor {
     print("Instance of Tor created!");
   }
 
-  Future<void> start({required Directory torDir}) async {
+  Future<TorConfig> start({required Directory torDir}) async {
     // TODO need to refactor configuration file creation out of start() method
     if (_connectionChecker != null) {
       throw Exception("Tor connection has already been started");
@@ -117,6 +117,7 @@ class Tor {
     });
 
     // TODO handle/catch errors and return torConfig
+    return torConfig;
   }
 
   static String generatePasswordHash(String password) {

@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 
 class TorConfig {
   final String dataDirectory;
+  final String configFile;
   final String logFile;
   final int socksPort;
   final int controlPort;
@@ -13,6 +14,7 @@ class TorConfig {
 
   TorConfig({
     required this.dataDirectory,
+    required this.configFile,
     required this.logFile,
     required this.socksPort,
     required this.controlPort,

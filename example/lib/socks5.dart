@@ -176,6 +176,10 @@ class SOCKSSocket {
   SOCKSState get state => _state;
   Stream<SOCKSState> get stateStream => _stateStream.stream;
 
+  final StreamController<Uint8List> _dataController =
+      StreamController<Uint8List>();
+  Stream<Uint8List> get onData => _dataController.stream;
+
   /// For username:password auth
   final String? username;
   final String? password;
@@ -213,7 +217,7 @@ class SOCKSSocket {
     _request = SOCKSRequest(
       command: SOCKSCommand.Connect,
       addressType: SOCKSAddressType.Domain,
-      address: AsciiEncoder().convert(ds[0]).sublist(0, ds[0].length),
+      address: const AsciiEncoder().convert(ds[0]).sublist(0, ds[0].length),
       port: int.tryParse(ds[1]) ?? 80,
     );
     await _start();
@@ -235,6 +239,7 @@ class SOCKSSocket {
 
   Future<void> close({bool keepOpen = true}) async {
     await _stateStream.close();
+    await _dataController.close(); // Close the data stream controller
     if (!keepOpen) {
       await _sock.close();
     }
@@ -341,6 +346,8 @@ class SOCKSSocket {
       }
     } else if (_state == SOCKSState.RequestReady) {
       if (data.length >= 10) {
+        print(2222222);
+        print(data);
         final version = data[0];
         final reply = SOCKSReply.fromValue(data[1]);
         //data[2] reserved
@@ -372,8 +379,12 @@ class SOCKSSocket {
           throw reply;
         }
       } else {
+        print(111111);
+        print(data);
         throw "Expected 10 bytes";
       }
+    } else if (_state == SOCKSState.Connected) {
+      _dataController.add(data);
     }
   }
 
@@ -396,6 +407,15 @@ class SOCKSSocket {
       _sock.write(data);
     } else {
       throw "Must be in RequestReady state, current state $_state";
+    }
+  }
+
+  void _socketEventListener(RawSocketEvent event) {
+    /// [RawSocketEvent] messages are here
+    /// read from here..
+    if (event == RawSocketEvent.read) {
+      final data = _sock.read(_sock.available());
+      print('proxy.subscription.onData: $data');
     }
   }
 }

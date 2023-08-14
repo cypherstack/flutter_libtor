@@ -188,13 +188,9 @@ class _MyAppState extends State<MyApp> {
                         final proxy = SOCKSSocket(sock);
                         await proxy
                             .connect('bitcoincash.stackwallet.com:50001');
-                        proxy.subscription?.onData((RawSocketEvent event) {
-                          /// [RawSocketEvent] messages are here
-                          /// read from here..
-                          if (event == RawSocketEvent.read) {
-                            final data = sock.read(sock.available());
-                            print('proxy.subscription.onData: $data');
-                          }
+
+                        proxy.onData.listen((data) {
+                          print('Received from proxy: $data');
                         });
                       } catch (e) {
                         print(e);

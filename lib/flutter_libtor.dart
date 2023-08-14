@@ -93,6 +93,7 @@ class Tor {
 
     final torConfig = TorConfig(
       dataDirectory: torDir.path,
+      configFile: "torrc",
       logFile: "tor_logs.txt",
       socksPort: _port,
       controlPort: _controlPort,
@@ -100,7 +101,7 @@ class Tor {
     );
 
     new Directory(torConfig.dataDirectory).create().then((Directory directory) {
-      new File(torConfig.logFile).create().then((file) {
+      new File(torConfig.configFile).create().then((file) {
         file.writeAsStringSync(torConfig.toString());
         if (dartFunction(file.path.toNativeUtf8())) {
           started = true;

@@ -59,47 +59,47 @@ class _MyAppState extends State<MyApp> {
             padding: const EdgeInsets.all(10),
             child: Column(
               children: [
-                // TODO add password input and start button to start Tor daemon with password input
-                const Text(
-                  'Enter the port and password of your Tor daemon/SOCKS5 proxy and press connect'
-                  'See the console logs for your port or ~/Documents/tor/tor.log',
-                  style: textStyle,
-                  textAlign: TextAlign.center,
-                ),
-                spacerSmall,
-                Row(children: [
-                  TextButton(
-                      onPressed: () async {
-                        getPort();
-                      },
-                      child: Text("generate unused port")),
-                  spacerSmall,
-                  Expanded(
-                    child: TextField(
-                        controller: portController,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'SOCKS5 proxy port',
-                        )),
-                  ),
-                ]),
-                Row(children: [
-                  TextButton(
-                      onPressed: () async {
-                        getPassword();
-                      },
-                      child: Text("generate password")),
-                  spacerSmall,
-                  Expanded(
-                    child: TextField(
-                        controller: passwordController,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'password',
-                        )),
-                  ),
-                ]),
-                spacerSmall,
+            //     // TODO add password input and start button to start Tor daemon with password input
+            //     const Text(
+            //       'Enter the port and password of your Tor daemon/SOCKS5 proxy and press connect'
+            //       'See the console logs for your port or ~/Documents/tor/tor.log',
+            //       style: textStyle,
+            //       textAlign: TextAlign.center,
+            //     ),
+            //     spacerSmall,
+            //     Row(children: [
+            //       TextButton(
+            //           onPressed: () async {
+            //             getPort();
+            //           },
+            //           child: Text("generate unused port")),
+            //       spacerSmall,
+            //       Expanded(
+            //         child: TextField(
+            //             controller: portController,
+            //             decoration: const InputDecoration(
+            //               border: OutlineInputBorder(),
+            //               hintText: 'SOCKS5 proxy port',
+            //             )),
+            //       ),
+            //     ]),
+            //     Row(children: [
+            //       TextButton(
+            //           onPressed: () async {
+            //             getPassword();
+            //           },
+            //           child: Text("generate password")),
+            //       spacerSmall,
+            //       Expanded(
+            //         child: TextField(
+            //             controller: passwordController,
+            //             decoration: const InputDecoration(
+            //               border: OutlineInputBorder(),
+            //               hintText: 'password',
+            //             )),
+            //       ),
+            //     ]),
+            //     spacerSmall,
                 TextButton(
                     onPressed: () async {
                       final Directory appDocDir =
@@ -115,7 +115,9 @@ class _MyAppState extends State<MyApp> {
                           password: passwordController.text);
 
                       // Start the Tor daemon
-                      await this.tor.start(torConfig);
+                      await this
+                          .tor
+                          .start(torDir: Directory(appDocDir.path + '/tor'));
                       print('done awaiting');
                     },
                     child: Text("start tor")),
@@ -138,9 +140,10 @@ class _MyAppState extends State<MyApp> {
 
                         // Assign connection factory
                         SocksTCPClient.assignToHttpClient(client, [
-                          ProxySettings(InternetAddress.loopbackIPv4,
-                              int.parse(portController.text),
-                              password: passwordController.text),
+                          ProxySettings(
+                              InternetAddress.loopbackIPv4, this.tor.port,
+                              password: passwordController
+                                  .text), // need to get from tor config file
                         ]);
 
                         // GET request

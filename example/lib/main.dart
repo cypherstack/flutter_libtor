@@ -287,7 +287,7 @@ class _MyAppState extends State<MyApp> {
                       Iterable<int> targetPortBytes = [
                         hexTargetPortString.substring(0, 2),
                         hexTargetPortString.substring(2)
-                      ].map((String byte) => int.parse(byte));
+                      ].map((String byte) => int.parse(byte, radix: 16));
                       List<int> connectRequest = [5, 1, 0, 3];
                       connectRequest.add(targetHostBytes.length);
                       connectRequest.addAll(targetHostBytes);

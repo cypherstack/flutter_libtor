@@ -237,7 +237,7 @@ class _MyAppState extends State<MyApp> {
                       // First step
                       step = Socks5.init;
                       print('Connecting to the socks5 server...');
-                      // completer = Completer();
+                      completer = Completer();
                       // The request format can be found in RFC 1928
                       socket.add([0x05, 0x02, 0x00, 0x02]);
                       await completer.future;

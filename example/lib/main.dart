@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_libtor/flutter_libtor.dart';
 // imports needed for tor usage:
 import 'package:flutter_libtor/models/tor_config.dart';
-import 'package:flutter_libtor_example/socks_socket.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:socks5_proxy/socks_client.dart'; // just for example; can use any socks5 proxy package, pick your favorite.
 
@@ -179,21 +178,88 @@ class _MyAppState extends State<MyApp> {
                 spacerSmall,
                 TextButton(
                     onPressed: () async {
-                      // TODO check that tor is running'
-                      SOCKSSocket socksSocket = SOCKSSocket(
-                          host: InternetAddress.loopbackIPv4.address,
-                          port: tor.port);
+                      // TODO check that tor is running
+
+                      // // custom socks_socket WIP POC
+                      // SOCKSSocket socksSocket = SOCKSSocket(
+                      //     host: InternetAddress.loopbackIPv4.address,
+                      //     port: tor.port);
+                      // try {
+                      //   await socksSocket.connect();
+                      // } catch (e) {
+                      //   print(e);
+                      // }
+                      // try {
+                      //   await socksSocket.connectTo(
+                      //       'bitcoincash.stackwallet.com', 50001);
+                      // } catch (e) {
+                      //   print(e);
+                      // }
+
+                      // https://github.com/LacticWhale/socks_dart/blob/master/example/client/tcp_1_simple_connect.dart
+                      const host = 'bitcoincash.stackwallet.com';
+                      const port = 50001;
+
+                      final InternetAddress address;
                       try {
-                        await socksSocket.connect();
+                        // Lookup address
+                        address = (await InternetAddress.lookup(host))[0];
+                      } catch (e) {
+                        // Lookup failed
+                        return print(e);
+                      }
+
+                      print("connecting to socks socket on ${tor.port}");
+                      final Socket proxySocket;
+                      try {
+                        // Connect to proxy
+                        proxySocket = await SocksTCPClient.connect(
+                          [
+                            ProxySettings(
+                                InternetAddress.loopbackIPv4, tor.port),
+                          ],
+                          address,
+                          port,
+                        );
                       } catch (e) {
                         print(e);
+                        return;
                       }
-                      try {
-                        await socksSocket.connectTo(
-                            'bitcoincash.stackwallet.com', 50001);
-                      } catch (e) {
-                        print(e);
-                      }
+
+                      print("listening to socks socket on ${tor.port}");
+                      // Receive data from proxy
+                      proxySocket
+                        ..listen((event) {
+                          print(ascii.decode(event));
+
+                          exit(0);
+                        })
+                        // Send data to client
+                        // proxyClient.add(Uint8List.fromList([0x01, 0x02, 0x03]));
+//                         ..write(
+//                           '''HEAD / HTTP/1.1
+// HOST: example.com
+// Connection: close
+//
+//
+// ''',
+                        ..write(jsonEncode({
+                          "jsonrpc": "2.0",
+                          "id": "0",
+                          "method": "server.features",
+                          "params": []
+                        }));
+                      // await proxySocket.flush();
+                      // await proxySocket.close();
+
+                      Future.delayed(const Duration(seconds: 30), () {
+                        print(
+                            'Timeout. Target haven\'t replied in given time.');
+                        proxySocket.flush();
+                        proxySocket.close();
+                        exit(0);
+                      });
+
                       // TODO request server features
                     },
                     child: const Text(

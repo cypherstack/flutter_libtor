@@ -2,26 +2,35 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-/// A SOCKS5 proxy client
 class SOCKSSocket {
-  final String host;
-  final int port;
+  final String proxyHost;
+  final int proxyPort;
 
-  late Socket _socksSocket;
-  Socket get socket => _socksSocket;
+  late final Socket _socksSocket;
 
-  final StreamController<List<int>> _responseController = StreamController();
+  final StreamController<List<int>> _responseController =
+      StreamController.broadcast();
 
-  // TODO accept String host or InternetAddress host
-  SOCKSSocket({required this.host, required this.port}) {
+  // Private constructor
+  SOCKSSocket._(this.proxyHost, this.proxyPort);
+
+  static Future<SOCKSSocket> create(
+      {required String proxyHost, required int proxyPort}) async {
+    var instance = SOCKSSocket._(proxyHost, proxyPort);
+    await instance._init();
+    return instance;
+  }
+
+  SOCKSSocket({required this.proxyHost, required this.proxyPort}) {
     _init();
   }
 
   /// Initializes the SOCKS socket.
+
   Future<void> _init() async {
     _socksSocket = await Socket.connect(
-      host,
-      port,
+      proxyHost,
+      proxyPort,
     );
 
     _socksSocket.listen(
@@ -43,13 +52,11 @@ class SOCKSSocket {
 
   /// Connects to the SOCKS socket.
   Future<void> connect() async {
-    _socksSocket = await Socket.connect(host, port);
-
     // Greeting and method selection
     _socksSocket.add([0x05, 0x01, 0x00]);
 
     // Wait for server response
-    var response = await _socksSocket.first;
+    var response = await _responseController.stream.first;
     if (response[1] != 0x00) {
       throw Exception('Failed to connect to SOCKS5 socket.');
     }
@@ -57,7 +64,6 @@ class SOCKSSocket {
 
   /// Connects to the specified [domain] and [port] through the SOCKS socket.
   Future<void> connectTo(String domain, int port) async {
-    // Command, Reserved, Address Type, Address, Port
     var request = [
       0x05,
       0x01,
@@ -71,29 +77,10 @@ class SOCKSSocket {
 
     _socksSocket.add(request);
 
-    if (await _responseController.stream.isEmpty) {
-      throw Exception(
-          'Stream has no data: Failed to connect to target through SOCKS5 proxy.');
-    }
-
-    // Wait for server response
-    var response;
-    try {
-      response = await _responseController.stream.first
-          .timeout(const Duration(seconds: 10), onTimeout: () {
-        throw TimeoutException(
-            'Failed to get response from the server within 10 seconds.');
-      });
-    } catch (e) {
-      throw Exception('Failed to connect to target through SOCKS5 proxy: $e');
-    }
+    var response = await _responseController.stream.first;
     if (response[1] != 0x00) {
       throw Exception('Failed to connect to target through SOCKS5 proxy.');
     }
-    // var response = await _responseController.stream.first;
-    // if (response[1] != 0x00) {
-    //   throw Exception('Failed to connect to target through SOCKS5 proxy.');
-    // }
   }
 
   /// Converts [object] to a String by invoking [Object.toString] and
@@ -103,6 +90,16 @@ class SOCKSSocket {
 
     List<int> data = utf8.encode(object.toString());
     _socksSocket.add(data);
+  }
+
+  /// Sends the server.features command to the proxy server.
+  Future<void> sendServerFeaturesCommand() async {
+    const String command =
+        '{"jsonrpc":"2.0","id":"0","method":"server.features","params":[]}';
+    _socksSocket.writeln(command);
+
+    var responseData = await _responseController.stream.first;
+    print("responseData: ${utf8.decode(responseData)}");
   }
 
   /// Closes the connection to the Tor proxy.

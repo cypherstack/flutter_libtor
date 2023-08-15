@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_libtor/flutter_libtor.dart';
 // imports needed for tor usage:
 import 'package:flutter_libtor/models/tor_config.dart';
+import 'package:flutter_libtor_example/socks_socket.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:socks5_proxy/socks_client.dart'; // just for example; can use any socks5 proxy package, pick your favorite.
 
@@ -178,85 +179,16 @@ class _MyAppState extends State<MyApp> {
                 spacerSmall,
                 TextButton(
                     onPressed: () async {
-                      // TODO check that tor is running
-
-                      const targetHost = 'bitcoincash.stackwallet.com';
-                      const targetPort = 50001;
-
-                      final proxyAddress = InternetAddress.loopbackIPv4;
-                      final proxyPort = tor.port; // replace with your tor port
-
-                      final socket =
-                          await Socket.connect(proxyAddress, proxyPort);
-
-                      StreamSubscription? socketSubscription;
-                      Completer<List<int>> responseCompleter = Completer();
-
-                      socketSubscription = socket.listen(
-                        (data) {
-                          print("Socket data: $data (${utf8.decode(data)})");
-                          responseCompleter.complete(data);
-                          responseCompleter =
-                              Completer(); // Reset the completer for the next response.
-                        },
-                        onError: (error) {
-                          print("Socket error: $error");
-                          if (!responseCompleter.isCompleted) {
-                            responseCompleter.completeError(error);
-                          }
-                        },
-                        onDone: () {
-                          if (!responseCompleter.isCompleted) {
-                            responseCompleter
-                                .completeError("Socket unexpectedly closed.");
-                          }
-                          socketSubscription?.cancel();
-                        },
+                      var socksSocket = await SOCKSSocket.create(
+                        proxyHost: InternetAddress.loopbackIPv4.address,
+                        proxyPort: tor.port,
                       );
 
-                      // SOCKS5 handshake
-                      socket.add([0x05, 0x01, 0x00]);
-
-                      final handshakeData = await responseCompleter.future;
-
-                      if (handshakeData[1] != 0x00) {
-                        print('SOCKS5 handshake failed');
-                        return;
-                      } else {
-                        print('SOCKS5 handshake succeeded');
-                      }
-
-                      final addressBytes = utf8.encode(targetHost);
-                      socket.add([
-                        0x05, // SOCKS version
-                        0x01, // CONNECT command
-                        0x00, // Reserved
-                        0x03, // Address type (3 means domain name)
-                        addressBytes.length,
-                        ...addressBytes, // Actual domain name
-                        (targetPort >> 8) & 0xff, // Higher byte of port
-                        targetPort & 0xff, // Lower byte of port
-                      ]);
-
-                      final connectData = await responseCompleter.future;
-                      print("connectData: $connectData");
-
-                      if (connectData[1] != 0x00) {
-                        print('SOCKS5 connect request failed');
-                        return;
-                      } else {
-                        print('SOCKS5 connect request succeeded');
-                      }
-
-                      // request server.features
-                      const String command =
-                          '{"jsonrpc":"2.0","id":"0","method":"server.features","params":[]}';
-                      socket.writeln(command);
-
-                      final responseData = await responseCompleter.future;
-                      print("responseData: ${utf8.decode(responseData)}");
-
-                      await socket.close();
+                      await socksSocket.connect();
+                      await socksSocket.connectTo(
+                          'bitcoincash.stackwallet.com', 50001);
+                      await socksSocket.sendServerFeaturesCommand();
+                      await socksSocket.close();
                     },
                     child: const Text(
                         "connect to bitcoincash.stackwallet.com:50001")),

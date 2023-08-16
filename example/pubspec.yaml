@@ -33,7 +33,7 @@ dependencies:
 
   flutter_libtor:
     # When depending on this package from a real application you should use:
-    #   tor: ^x.y.z
+    #   flutter_libtor: ^x.y.z
     # See https://dart.dev/tools/pub/dependencies#version-constraints
     # The example app is bundled with the plugin so we use a path dependency on
     # the parent directory to use the current plugin's version.

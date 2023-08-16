@@ -29,6 +29,7 @@ class _MyAppState extends State<MyApp> {
   // final portController = TextEditingController();
   // final passwordController = TextEditingController();
   final hostController = TextEditingController(text: 'https://icanhazip.com/');
+  // https://check.torproject.org is also a good option
 
   @override
   void initState() {
@@ -39,23 +40,12 @@ class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
     // Clean up the controller when the widget is disposed.
-    // portController.dispose();
-    // passwordController.dispose();
     hostController.dispose();
     super.dispose();
   }
 
   Future<void> init() async {
     final Directory appDocDir = await getApplicationDocumentsDirectory();
-    // int newControlPort = await tor.getRandomUnusedPort(
-    //     excluded: [/*int.parse(portController.text)*/]);
-    // TorConfig torConfig = new TorConfig(
-    //     dataDirectory: appDocDir.path + '/tor',
-    //     logFile: appDocDir.path + '/tor/tor.log',
-    //     socksPort: int.parse(portController.text),
-    //     controlPort: newControlPort,
-    //     password: passwordController.text);
-
     // Start the Tor daemon
     _torConfig = await tor.start(torDir: Directory('${appDocDir.path}/tor'));
     _password = _torConfig.password;
@@ -76,69 +66,6 @@ class _MyAppState extends State<MyApp> {
             padding: const EdgeInsets.all(10),
             child: Column(
               children: [
-                //     // TODO add password input and start button to start Tor daemon with password input
-                //     const Text(
-                //       'Enter the port and password of your Tor daemon/SOCKS5 proxy and press connect'
-                //       'See the console logs for your port or ~/Documents/tor/tor.log',
-                //       style: textStyle,
-                //       textAlign: TextAlign.center,
-                //     ),
-                //     spacerSmall,
-                //     Row(children: [
-                //       TextButton(
-                //           onPressed: () async {
-                //             getPort();
-                //           },
-                //           child: Text("generate unused port")),
-                //       spacerSmall,
-                //       Expanded(
-                //         child: TextField(
-                //             controller: portController,
-                //             decoration: const InputDecoration(
-                //               border: OutlineInputBorder(),
-                //               hintText: 'SOCKS5 proxy port',
-                //             )),
-                //       ),
-                //     ]),
-                //     Row(children: [
-                //       TextButton(
-                //           onPressed: () async {
-                //             getPassword();
-                //           },
-                //           child: Text("generate password")),
-                //       spacerSmall,
-                //       Expanded(
-                //         child: TextField(
-                //             controller: passwordController,
-                //             decoration: const InputDecoration(
-                //               border: OutlineInputBorder(),
-                //               hintText: 'password',
-                //             )),
-                //       ),
-                //     ]),
-                //     spacerSmall,
-                // TextButton(
-                //     onPressed: () async {
-                //       final Directory appDocDir =
-                //           await getApplicationDocumentsDirectory();
-                //       int newControlPort = await this.tor.getRandomUnusedPort(
-                //           excluded: [int.parse(portController.text)]);
-                //
-                //       TorConfig torConfig = new TorConfig(
-                //           dataDirectory: appDocDir.path + '/tor',
-                //           logFile: appDocDir.path + '/tor/tor.log',
-                //           socksPort: int.parse(portController.text),
-                //           controlPort: newControlPort,
-                //           password: passwordController.text);
-                //
-                //       // Start the Tor daemon
-                //       await this
-                //           .tor
-                //           .start(torDir: Directory(appDocDir.path + '/tor'));
-                //       print('done awaiting');
-                //     },
-                //     child: Text("start tor")),
-                // spacerSmall,
                 Row(children: [
                   Expanded(
                     child: TextField(
@@ -168,8 +95,8 @@ class _MyAppState extends State<MyApp> {
                         final response = await request.close();
                         // Print response
                         var responseString = await utf8.decodeStream(response);
-                        print(
-                            responseString); // if host input left to default icanhazip.com, a Tor exit node IP should be printed to the console
+                        print(responseString);
+                        // if host input left to default icanhazip.com, a Tor exit node IP should be printed to the console. https://check.torproject.org is also good for doublechecking torability
 
                         // Close client
                         client.close();
@@ -179,14 +106,18 @@ class _MyAppState extends State<MyApp> {
                 spacerSmall,
                 TextButton(
                     onPressed: () async {
+                      // instantiate a socks socket at localhost and on the port selected by the tor service
                       var socksSocket = await SOCKSSocket.create(
                         proxyHost: InternetAddress.loopbackIPv4.address,
                         proxyPort: tor.port,
                       );
 
+                      // connect to the socks instantiated above
                       await socksSocket.connect();
+                      // connect to bitcoincash.stackwallet.com on port 50001 via socks socket
                       await socksSocket.connectTo(
                           'bitcoincash.stackwallet.com', 50001);
+                      // send a server features command to the connected socket, see method for more specific usage example
                       await socksSocket.sendServerFeaturesCommand();
                       await socksSocket.close();
                     },
@@ -200,12 +131,4 @@ class _MyAppState extends State<MyApp> {
       ),
     );
   }
-
-  // getPort() async {
-  //   portController.text = "${await this.tor.getRandomUnusedPort()}";
-  // }
-  //
-  // getPassword() async {
-  //   passwordController.text = "${await this.tor.generatePassword()}";
-  // }
 }

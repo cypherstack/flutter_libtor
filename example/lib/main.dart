@@ -148,8 +148,13 @@ class _MyAppState extends State<MyApp> {
 
                       final InternetAddress address;
                       try {
+<<<<<<< HEAD
                         // Lookup address
                         address = (await InternetAddress.lookup(host))[0];
+=======
+                        await socksSocket.connect();
+                        print('should be connected to tor socks proxy');
+>>>>>>> custom_socks
                       } catch (e) {
                         // Lookup failed
                         return print(e);
@@ -158,6 +163,7 @@ class _MyAppState extends State<MyApp> {
                       print("connecting to socks socket on ${tor.port}");
                       final Socket proxySocket;
                       try {
+<<<<<<< HEAD
                         // Connect to proxy
                         proxySocket = await SocksTCPClient.connect(
                           [
@@ -179,6 +185,12 @@ class _MyAppState extends State<MyApp> {
                           print('Received from proxy: $data');
                         });
 >>>>>>> socks5
+=======
+                        await socksSocket.connectTo(
+                            'bitcoincash.stackwallet.com', 50001);
+                        print(
+                            'should be connected to bitcoincash.stackwallet.com:50001 via tor socks socket');
+>>>>>>> custom_socks
                       } catch (e) {
                         print(e);
                         return;

@@ -7,6 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_libtor/flutter_libtor.dart';
 // imports needed for tor usage:
 import 'package:flutter_libtor/models/tor_config.dart';
+<<<<<<< HEAD
+=======
+import 'package:flutter_libtor_example/socks5.dart';
+>>>>>>> socks5
 import 'package:path_provider/path_provider.dart';
 import 'package:socks5_proxy/socks_client.dart'; // just for example; can use any socks5 proxy package, pick your favorite.
 
@@ -45,6 +49,20 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> init() async {
     final Directory appDocDir = await getApplicationDocumentsDirectory();
+<<<<<<< HEAD
+=======
+    print('starting tor at');
+    print(appDocDir.path);
+    // int newControlPort = await tor.getRandomUnusedPort(
+    //     excluded: [/*int.parse(portController.text)*/]);
+    // TorConfig torConfig = new TorConfig(
+    //     dataDirectory: appDocDir.path + '/tor',
+    //     logFile: appDocDir.path + '/tor/tor.log',
+    //     socksPort: int.parse(portController.text),
+    //     controlPort: newControlPort,
+    //     password: passwordController.text);
+
+>>>>>>> socks5
     // Start the Tor daemon
     _torConfig = await tor.start(torDir: Directory('${appDocDir.path}/tor'));
     _password = _torConfig.password;
@@ -106,6 +124,7 @@ class _MyAppState extends State<MyApp> {
                 TextButton(
                     onPressed: () async {
                       // TODO check that tor is running
+<<<<<<< HEAD
 
                       // // custom socks_socket WIP POC
                       // SOCKSSocket socksSocket = SOCKSSocket(
@@ -148,11 +167,24 @@ class _MyAppState extends State<MyApp> {
                           address,
                           port,
                         );
+=======
+                      try {
+                        final sock = await RawSocket.connect(
+                            InternetAddress.loopbackIPv4, tor.port);
+                        final proxy = SOCKSSocket(sock);
+                        await proxy
+                            .connect('bitcoincash.stackwallet.com:50001');
+
+                        proxy.onData.listen((data) {
+                          print('Received from proxy: $data');
+                        });
+>>>>>>> socks5
                       } catch (e) {
                         print(e);
                         return;
                       }
 
+<<<<<<< HEAD
                       print("listening to socks socket on ${tor.port}");
                       // Receive data from proxy
                       proxySocket
@@ -187,6 +219,8 @@ class _MyAppState extends State<MyApp> {
                         exit(0);
                       });
 
+=======
+>>>>>>> socks5
                       // TODO request server features
                     },
                     child: const Text(

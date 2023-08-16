@@ -76,45 +76,10 @@ class SOCKSSocket {
     ];
 
     _socksSocket.add(request);
-    var responseCompleter = Completer<List<int>>();
 
-    // Listener to the stream
-    var subscription = _responseController.stream.listen(
-      (response) {
-        if (response[1] != 0x00) {
-          responseCompleter.completeError(
-              Exception('Failed to connect to target through SOCKS5 proxy.'));
-        } else {
-          responseCompleter.complete(response);
-        }
-      },
-      onError: (error) {
-        responseCompleter.completeError(error);
-      },
-      cancelOnError: true,
-    );
-
-<<<<<<< HEAD
     var response = await _responseController.stream.first;
     if (response[1] != 0x00) {
       throw Exception('Failed to connect to target through SOCKS5 proxy.');
-=======
-    // Timeout logic
-    Future.delayed(const Duration(seconds: 10), () {
-      if (!responseCompleter.isCompleted) {
-        subscription.cancel();
-        responseCompleter.completeError(TimeoutException(
-            'Failed to get response from the server within 10 seconds.'));
-      }
-    });
-
-    try {
-      var response = await responseCompleter.future;
-      print(response);
-      // subscription.cancel();
-    } catch (e) {
-      throw Exception('Failed to connect to target through SOCKS5 proxy: $e');
->>>>>>> custom_socks
     }
   }
 

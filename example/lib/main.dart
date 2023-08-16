@@ -7,7 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_libtor/flutter_libtor.dart';
 // imports needed for tor usage:
 import 'package:flutter_libtor/models/tor_config.dart';
-import 'package:flutter_libtor_example/socks_socket.dart';
+<<<<<<< HEAD
+=======
+import 'package:flutter_libtor_example/socks5.dart';
+>>>>>>> socks5
 import 'package:path_provider/path_provider.dart';
 import 'package:socks5_proxy/socks_client.dart'; // just for example; can use any socks5 proxy package, pick your favorite.
 
@@ -46,6 +49,20 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> init() async {
     final Directory appDocDir = await getApplicationDocumentsDirectory();
+<<<<<<< HEAD
+=======
+    print('starting tor at');
+    print(appDocDir.path);
+    // int newControlPort = await tor.getRandomUnusedPort(
+    //     excluded: [/*int.parse(portController.text)*/]);
+    // TorConfig torConfig = new TorConfig(
+    //     dataDirectory: appDocDir.path + '/tor',
+    //     logFile: appDocDir.path + '/tor/tor.log',
+    //     socksPort: int.parse(portController.text),
+    //     controlPort: newControlPort,
+    //     password: passwordController.text);
+
+>>>>>>> socks5
     // Start the Tor daemon
     _torConfig = await tor.start(torDir: Directory('${appDocDir.path}/tor'));
     _password = _torConfig.password;
@@ -106,20 +123,117 @@ class _MyAppState extends State<MyApp> {
                 spacerSmall,
                 TextButton(
                     onPressed: () async {
-                      // instantiate a socks socket at localhost and on the port selected by the tor service
-                      var socksSocket = await SOCKSSocket.create(
-                        proxyHost: InternetAddress.loopbackIPv4.address,
-                        proxyPort: tor.port,
-                      );
+                      // TODO check that tor is running
+<<<<<<< HEAD
 
-                      // connect to the socks instantiated above
-                      await socksSocket.connect();
-                      // connect to bitcoincash.stackwallet.com on port 50001 via socks socket
-                      await socksSocket.connectTo(
-                          'bitcoincash.stackwallet.com', 50001);
-                      // send a server features command to the connected socket, see method for more specific usage example
-                      await socksSocket.sendServerFeaturesCommand();
-                      await socksSocket.close();
+                      // // custom socks_socket WIP POC
+                      // SOCKSSocket socksSocket = SOCKSSocket(
+                      //     host: InternetAddress.loopbackIPv4.address,
+                      //     port: tor.port);
+                      // try {
+                      //   await socksSocket.connect();
+                      // } catch (e) {
+                      //   print(e);
+                      // }
+                      // try {
+                      //   await socksSocket.connectTo(
+                      //       'bitcoincash.stackwallet.com', 50001);
+                      // } catch (e) {
+                      //   print(e);
+                      // }
+
+                      // https://github.com/LacticWhale/socks_dart/blob/master/example/client/tcp_1_simple_connect.dart
+                      const host = 'bitcoincash.stackwallet.com';
+                      const port = 50001;
+
+                      final InternetAddress address;
+                      try {
+<<<<<<< HEAD
+                        // Lookup address
+                        address = (await InternetAddress.lookup(host))[0];
+=======
+                        await socksSocket.connect();
+                        print('should be connected to tor socks proxy');
+>>>>>>> custom_socks
+                      } catch (e) {
+                        // Lookup failed
+                        return print(e);
+                      }
+
+                      print("connecting to socks socket on ${tor.port}");
+                      final Socket proxySocket;
+                      try {
+<<<<<<< HEAD
+                        // Connect to proxy
+                        proxySocket = await SocksTCPClient.connect(
+                          [
+                            ProxySettings(
+                                InternetAddress.loopbackIPv4, tor.port),
+                          ],
+                          address,
+                          port,
+                        );
+=======
+                      try {
+                        final sock = await RawSocket.connect(
+                            InternetAddress.loopbackIPv4, tor.port);
+                        final proxy = SOCKSSocket(sock);
+                        await proxy
+                            .connect('bitcoincash.stackwallet.com:50001');
+
+                        proxy.onData.listen((data) {
+                          print('Received from proxy: $data');
+                        });
+>>>>>>> socks5
+=======
+                        await socksSocket.connectTo(
+                            'bitcoincash.stackwallet.com', 50001);
+                        print(
+                            'should be connected to bitcoincash.stackwallet.com:50001 via tor socks socket');
+>>>>>>> custom_socks
+                      } catch (e) {
+                        print(e);
+                        return;
+                      }
+
+<<<<<<< HEAD
+                      print("listening to socks socket on ${tor.port}");
+                      // Receive data from proxy
+                      proxySocket
+                        ..listen((event) {
+                          print(ascii.decode(event));
+
+                          exit(0);
+                        })
+                        // Send data to client
+                        // proxyClient.add(Uint8List.fromList([0x01, 0x02, 0x03]));
+//                         ..write(
+//                           '''HEAD / HTTP/1.1
+// HOST: example.com
+// Connection: close
+//
+//
+// ''',
+                        ..write(jsonEncode({
+                          "jsonrpc": "2.0",
+                          "id": "0",
+                          "method": "server.features",
+                          "params": []
+                        }));
+                      // await proxySocket.flush();
+                      // await proxySocket.close();
+
+                      Future.delayed(const Duration(seconds: 30), () {
+                        print(
+                            'Timeout. Target haven\'t replied in given time.');
+                        proxySocket.flush();
+                        proxySocket.close();
+                        exit(0);
+                      });
+
+=======
+>>>>>>> socks5
+                      // TODO request server features
                     },
                     child: const Text(
                         "connect to bitcoincash.stackwallet.com:50001")),
@@ -132,3 +246,5 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+
+enum Socks5 { init, auth, connect }

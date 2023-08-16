@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_libtor/flutter_libtor.dart';
 // imports needed for tor usage:
 import 'package:flutter_libtor/models/tor_config.dart';
-import 'package:flutter_libtor_example/socks_socket.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:socks5_proxy/socks_client.dart'; // just for example; can use any socks5 proxy package, pick your favorite.
 
@@ -106,20 +105,127 @@ class _MyAppState extends State<MyApp> {
                 spacerSmall,
                 TextButton(
                     onPressed: () async {
-                      // instantiate a socks socket at localhost and on the port selected by the tor service
-                      var socksSocket = await SOCKSSocket.create(
-                        proxyHost: InternetAddress.loopbackIPv4.address,
-                        proxyPort: tor.port,
-                      );
+                      // TODO check that tor is running'
+                      String targetHost = 'bitcoincash.stackwallet.com';
+                      int targetPort = 50001;
 
-                      // connect to the socks instantiated above
-                      await socksSocket.connect();
-                      // connect to bitcoincash.stackwallet.com on port 50001 via socks socket
-                      await socksSocket.connectTo(
-                          'bitcoincash.stackwallet.com', 50001);
-                      // send a server features command to the connected socket, see method for more specific usage example
-                      await socksSocket.sendServerFeaturesCommand();
-                      await socksSocket.close();
+                      String socksLogin = '';
+                      String socksPassword = '';
+
+                      // Establish a TCP connection with the socks5 server
+                      Socket socket = await Socket.connect(
+                          InternetAddress.loopbackIPv4, tor.port);
+
+                      // Here, it is recorded at which stage the communication with the server is
+                      Socks5 step = Socks5.init;
+
+                      // Server response result
+                      int result = 0;
+
+                      // IP address given by the server after successful connection establishment
+                      InternetAddress ip = InternetAddress('8.8.8.8');
+
+                      // Port issued by the server after successful connection establishment
+                      int port = 80;
+
+                      // Completer is necessary for synchronizing requests
+                      Completer completer = Completer();
+
+                      // Listen to the server's response
+                      // data is List<int> (bytes with information from the server)
+                      socket.listen((data) async {
+                        // The request result (success/failure etc.) is passed in data[1]
+                        result = data[1];
+
+                        // If the CONNECT command was executed, then from the server's response, you can extract the ip and port
+                        // issued by the server for communication with the target host
+                        if (step == Socks5.connect) {
+                          // data[3] determines in which format the address is provided
+                          if (data[3] == 1) {
+                            // data[3] == 1 - address in IPv4 format
+                            ip = new InternetAddress(
+                                data.sublist(4, 8).join('.'));
+                          } else if (data[3] == 3) {
+                            //data[3] == 3 - address as a domain name
+                            ip = (await InternetAddress.lookup(
+                                new String.fromCharCodes(
+                                    data.sublist(5, 5 + data[4])),
+                                type: InternetAddressType.IPv4))[0];
+                          }
+                          port = int.parse('0x' +
+                              data
+                                  .sublist(data.length - 2)
+                                  .map((int byte) => byte.toRadixString(16))
+                                  .join());
+                        }
+                        completer.complete();
+                      });
+
+                      // First step
+                      step = Socks5.init;
+                      print('Connecting to the socks5 server...');
+                      completer = Completer();
+                      // The request format can be found in RFC 1928
+                      socket.add([0x05, 0x02, 0x00, 0x02]);
+                      await completer.future;
+                      if (result == 0xff) {
+                        print(
+                            'The specified authentication methods are not supported');
+                        socket.close();
+                        exit(1);
+                      }
+                      print('done');
+
+                      // If the server selected the authentication method by username and password (2),
+                      // then perform authentication
+                      if (result == 2) {
+                        step = Socks5.auth;
+                        print('Authentication');
+                        completer = new Completer();
+                        List<int> loginBytes = socksLogin.codeUnits;
+                        List<int> passwordBytes = socksPassword.codeUnits;
+
+                        // Forming an authentication request
+                        // Request format, see RFC 1929
+                        List<int> authRequest = [1];
+                        authRequest.add(loginBytes.length);
+                        authRequest.addAll(loginBytes);
+                        authRequest.add(passwordBytes.length);
+                        authRequest.addAll(passwordBytes);
+
+                        socket.add(authRequest);
+
+                        await completer.future;
+                        if (result != 0) {
+                          print('Incorrect login or password');
+                          socket.close();
+                          exit(1);
+                        }
+                        print('Ok');
+                      }
+
+                      // Establish a connection to the target host
+                      step = Socks5.connect;
+                      print('Establishing a connection...');
+                      completer = new Completer();
+                      List<int> targetHostBytes = targetHost.codeUnits;
+                      String hexTargetPortString =
+                          targetPort.toRadixString(16).padLeft(4, '0');
+                      Iterable<int> targetPortBytes = [
+                        hexTargetPortString.substring(0, 2),
+                        hexTargetPortString.substring(2)
+                      ].map((String byte) => int.parse(byte, radix: 16));
+                      List<int> connectRequest = [5, 1, 0, 3];
+                      connectRequest.add(targetHostBytes.length);
+                      connectRequest.addAll(targetHostBytes);
+                      connectRequest.addAll(targetPortBytes);
+                      socket.add(connectRequest);
+                      await completer.future;
+                      print(ip);
+                      print(port);
+                      // Here, presumably, there should be communication with the target host
+                      socket.close();
+                      // TODO request server features
                     },
                     child: const Text(
                         "connect to bitcoincash.stackwallet.com:50001")),
@@ -132,3 +238,5 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
+
+enum Socks5 { init, auth, connect }

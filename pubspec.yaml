@@ -30,6 +30,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  tor_ffi_plugin:
+    git:
+      url: git@github.com:cypherstack/tor.git
+      ref: main # TODO pin to specific commit to reduce supply chain attack surface.
+  # TODO include package which includes tor and checks circuit.
 
 
   # The following adds the Cupertino Icons font to your application.

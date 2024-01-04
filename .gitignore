@@ -16,3 +16,7 @@ android/src/main/jniLibs/*
 linux/bin/x86_64-unknown-linux-gnu/release/libtor_ffi.so
 
 build/
+
+.flutter-plugins
+
+.flutter-plugins-dependencies

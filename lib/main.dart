@@ -119,6 +119,14 @@ class _MyHomePageState extends State<MyHomePage> {
           padding: const EdgeInsets.all(10),
           child: Column(
             children: [
+              // An explainer paragraph of test containing a walkthrough for the
+              // proof of concept.
+              const Text("1. Click the `Start tor` button to start Tor A\n"
+                  "2. Click the `Make proxied request` button to start get Tor Address A\n"
+                  "3. Click the `Test tor_package` button to start Tor B and get Tor Address B\n"
+                  "4. Compare the two addresses printed to the console."),
+              // A spacer.
+              spacerSmall,
               TextButton(
                 onPressed: torIsRunning
                     ? null
@@ -205,63 +213,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ],
               ),
-              spacerSmall,
-              TextButton(
-                onPressed: torIsRunning
-                    ? () async {
-                        // Instantiate a socks socket at localhost and on the port selected by the tor service.
-                        var socksSocket = await SOCKSSocket.create(
-                          proxyHost: InternetAddress.loopbackIPv4.address,
-                          proxyPort: Tor.instance.port,
-                          sslEnabled: true, // For SSL connections.
-                        );
-
-                        // Connect to the socks instantiated above.
-                        await socksSocket.connect();
-
-                        // Connect to bitcoin.stackwallet.com on port 50002 via socks socket.
-                        //
-                        // Note that this is an SSL example.
-                        await socksSocket.connectTo(
-                            'bitcoin.stackwallet.com', 50002);
-
-                        // Send a server features command to the connected socket, see method for more specific usage example..
-                        await socksSocket.sendServerFeaturesCommand();
-
-                        // You should see a server response printed to the console.
-                        //
-                        // Example response:
-                        // `flutter: secure responseData: {
-                        // 	"id": "0",
-                        // 	"jsonrpc": "2.0",
-                        // 	"result": {
-                        // 		"cashtokens": true,
-                        // 		"dsproof": true,
-                        // 		"genesis_hash": "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
-                        // 		"hash_function": "sha256",
-                        // 		"hosts": {
-                        // 			"bitcoin.stackwallet.com": {
-                        // 				"ssl_port": 50002,
-                        // 				"tcp_port": 50001,
-                        // 				"ws_port": 50003,
-                        // 				"wss_port": 50004
-                        // 			}
-                        // 		},
-                        // 		"protocol_max": "1.5",
-                        // 		"protocol_min": "1.4",
-                        // 		"pruning": null,
-                        // 		"server_version": "Fulcrum 1.9.1"
-                        // 	}
-                        // }
-
-                        // Close the socket.
-                        await socksSocket.close();
-                      }
-                    : null,
-                child: const Text(
-                  "Connect to bitcoin.stackwallet.com:50002 (SSL) via socks socket",
-                ),
-              ),
               // A spacer.
               spacerSmall,
               // A button that demonstrates use of tor_package.
@@ -273,15 +224,19 @@ class _MyHomePageState extends State<MyHomePage> {
                     ?*/
                     () async {
                   // Add one to the counter.
-                  final calculator = Calculator();
-                  int two = calculator.addOne(2);
+                  final torPackage = TorPackage();
+
+                  print("can haz tor?");
+                  torPackage.startTor();
+                  print("purtortedly haz");
+                  String hazIp = await torPackage.iCanHazIp();
+                  print("haz ip $hazIp");
 
                   // TODO link to UI.
                   //
                   // For now we'll just print to the console, but we need
                   // to implement tor_package to the point that it can
                   // start and report its own tor instance.  TODO.
-                  print("2 + 1 = $two");
                 } /*: null*/, // TODO enable.  See also above.
                 child: const Text("Test tor_package"),
               ),

@@ -10,6 +10,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  tor_ffi_plugin:
+    git:
+      url: git@github.com:cypherstack/tor.git
+      ref: main # TODO pin to specific commit to reduce supply chain attack surface.
+  socks5_proxy: 1.0.4
+  path_provider: ^2.1.1
 
 dev_dependencies:
   flutter_test:

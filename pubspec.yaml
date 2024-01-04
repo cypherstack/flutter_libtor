@@ -34,7 +34,8 @@ dependencies:
     git:
       url: git@github.com:cypherstack/tor.git
       ref: main # TODO pin to specific commit to reduce supply chain attack surface.
-  # TODO include package which includes tor and checks circuit.
+  tor_package:
+    path: tor_package
   socks5_proxy: 1.0.4
   path_provider: ^2.1.1
 

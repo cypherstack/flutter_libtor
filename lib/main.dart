@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 // Imports needed for tor usage:
 import 'package:socks5_proxy/socks_client.dart'; // Just for example; can use any socks5 proxy package, pick your favorite.
 import 'package:tor_ffi_plugin/tor_ffi_plugin.dart';
+import 'package:tor_package/tor_package.dart';
 
 void main() {
   runApp(const MyApp());
@@ -260,6 +261,29 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: const Text(
                   "Connect to bitcoin.stackwallet.com:50002 (SSL) via socks socket",
                 ),
+              ),
+              // A spacer.
+              spacerSmall,
+              // A button that demonstrates use of tor_package.
+              //
+              // Because tor_package is just the package template, it just has
+              // an addOne function, so we'll just demonstrate that for now.
+              TextButton(
+                onPressed: /*torPackageIsRunning // TODO enable.  See also below.
+                    ?*/
+                    () async {
+                  // Add one to the counter.
+                  final calculator = Calculator();
+                  int two = calculator.addOne(2);
+
+                  // TODO link to UI.
+                  //
+                  // For now we'll just print to the console, but we need
+                  // to implement tor_package to the point that it can
+                  // start and report its own tor instance.  TODO.
+                  print("2 + 1 = $two");
+                } /*: null*/, // TODO enable.  See also above.
+                child: const Text("Test tor_package"),
               ),
             ],
           ),

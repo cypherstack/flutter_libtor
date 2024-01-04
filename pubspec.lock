@@ -257,6 +257,13 @@ packages:
       url: "git@github.com:cypherstack/tor.git"
     source: git
     version: "0.0.1"
+  tor_package:
+    dependency: "direct main"
+    description:
+      path: tor_package
+      relative: true
+    source: path
+    version: "0.0.1"
   vector_math:
     dependency: transitive
     description:
